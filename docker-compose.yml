@@ -1,0 +1,59 @@
+services:
+  # ============================================================
+  # Microsoft SQL Server (MSSQL 2022) Database Service
+  # npm run docker:dev loads both service env files.
+  # ============================================================
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: caritas_mssql_dev
+    restart: unless-stopped
+    env_file:
+      - ./database/.env
+    environment:
+      MSSQL_TCP_PORT: "${MSSQL_TCP_PORT:-1433}"
+    ports:
+      - "1433:${MSSQL_TCP_PORT:-1433}"
+    volumes:
+      - ./database/data:/var/opt/mssql/data
+      - ./database/scripts:/database/scripts:ro
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost,$MSSQL_TCP_PORT -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - caritas_dev_network
+
+  # ============================================================
+  # Backend API Service (Development with hot-reload)
+  # Targets the 'development' stage in Dockerfile
+  # ============================================================
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+      target: development
+    container_name: caritas_backend_dev
+    restart: unless-stopped
+    env_file:
+      - ./apps/backend/.env
+    environment:
+      PORT: "${PORT:-3000}"
+      DB_PORT: "${MSSQL_TCP_PORT:-1433}"
+      # Docker Desktop bind mounts may not forward Windows file-change events.
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "300"
+    ports:
+      - "3000:${PORT:-3000}"
+    volumes:
+      - ./apps/backend/src:/app/apps/backend/src:ro
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - caritas_dev_network
+
+networks:
+  caritas_dev_network:
+    driver: bridge
