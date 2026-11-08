@@ -1,6 +1,6 @@
-# Caritas Hospital - Concurrent Appointment Booking API
+# Concurrent Appointment Booking API
 
-Technical Assessment Submission for the **Node.js Backend Developer** position at **Caritas Hospital, Kottayam**.
+Technical Assessment Submission for the **Node.js Backend Developer** position.
 
 ---
 
@@ -17,7 +17,7 @@ The core objective is to guarantee that when two patients attempt to book the ex
 
 ## 📁 Project Architecture & Structure
 For a full breakdown of the directory layout, layer responsibilities, and container configurations, refer to the documentation:
-👉 **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)**
+👉 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
 ---
 
@@ -52,9 +52,9 @@ npm run docker:dev
 ```
 Development uses polling to detect source edits on Docker Desktop for Windows. Changes under `apps/backend/src` restart the API automatically; dependency and Dockerfile changes require a rebuild.
 
-To build and start the backend in the background with hot-reload:
+To build and start the backend in the background (detached mode):
 ```bash
-npm run docker:backend
+npm run compose:dev -- up -d
 ```
 This also starts the required SQL Server service and waits for its health check. View backend logs with `npm run compose:dev -- logs -f backend`; stop the development stack with `npm run compose:dev -- down`.
 
@@ -76,12 +76,44 @@ You can also run SQL Server in Docker while running the Node.js API directly on 
 # Start just SQL Server
 npm run compose:dev -- up sqlserver -d
 
+# Initialize database schema and seed sample data
+npm run db:init
+
 # Install dependencies and start local dev server
 npm install
-npm run dev:backend
+npm run dev
 ```
 
 ---
 
 ## 🧪 Testing & Verification
-Concurrency tests and execution results are planned for the booking implementation stage.
+
+### 1. Automated Test Suite (Jest + Supertest)
+The test suite is structured following a **Feature-Mirrored Architecture** with full test isolation (dynamic test fixtures, zero manual database resets):
+```bash
+# Run all unit, integration, and concurrency tests (24 tests across 4 suites)
+npm test
+```
+
+This verifies:
+- **Schema Validation (Unit)**: Rejection of missing fields, floats, negative values, and 32-bit integer overflows.
+- **Middleware Error Handler (Unit)**: Mapping custom domain exceptions (`ConflictError`, `NotFoundError`, `ValidationError`, `AppError`) to HTTP responses.
+- **API & HTTP Validation (Integration)**: Full HTTP lifecycle against Express using Supertest, testing 400 Bad Request, 404 Not Found, 201 Created, and 409 Conflict.
+- **Concurrency Verification (Integration)**: Simulating race conditions with 2 and 6 parallel requests competing for the exact same slot.
+
+### 2. Standalone Concurrency Verification Script
+To execute the standalone race condition runner against a running API server:
+```bash
+# Locally against http://localhost:3000:
+npm run test:concurrency
+
+# Or inside the running Docker development container:
+npm run docker:test:concurrency
+```
+
+This sends simultaneous parallel requests via `Promise.all()` to `POST /api/appointments/book` and verifies that exactly 1 request succeeds (`201`), competing requests receive `409 Conflict`, and zero duplicate records are created in MSSQL.
+
+### Documentation
+- 🏗️ **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Monorepo layout, system architecture flow, and 3NF database schema overview.
+- ⚡ **[docs/CONCURRENCY_STRATEGY.md](docs/CONCURRENCY_STRATEGY.md)**: Explanation of MSSQL transactions, pessimistic row locking (`UPDLOCK, ROWLOCK, HOLDLOCK`), and unique constraints.
+- 📊 **[docs/TEST_EXECUTION_RESULTS.md](docs/TEST_EXECUTION_RESULTS.md)**: Live execution output and invariant verification proofs.

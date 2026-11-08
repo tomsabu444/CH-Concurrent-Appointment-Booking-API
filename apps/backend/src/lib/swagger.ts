@@ -7,7 +7,7 @@ const options: Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Caritas Hospital - Concurrent Appointment Booking API',
+      title: 'Concurrent Appointment Booking API',
       version: '1.0.0',
       description:
         'REST API for booking doctor appointments with strict concurrency handling using Microsoft SQL Server.',
@@ -22,8 +22,8 @@ const options: Options = {
       },
     ],
   },
-  // Resolve beside this module in both src/ and dist/, independent of cwd.
-  apis: [path.resolve(__dirname, '../routes/*.{ts,js}').replace(/\\/g, '/')],
+  // Resolve routes across all features in both src/ and dist/, independent of cwd.
+  apis: [path.resolve(__dirname, '../features/**/*.routes.{ts,js}').replace(/\\/g, '/')],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

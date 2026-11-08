@@ -5,7 +5,7 @@ services:
   # ============================================================
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: caritas_mssql_dev
+    container_name: booking_mssql_dev
     restart: unless-stopped
     env_file:
       - ./database/.env
@@ -19,11 +19,11 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost,$MSSQL_TCP_PORT -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 5
-      start_period: 15s
+      start_period: 20s
     networks:
-      - caritas_dev_network
+      - booking_dev_network
 
   # ============================================================
   # Backend API Service (Development with hot-reload)
@@ -34,7 +34,7 @@ services:
       context: .
       dockerfile: apps/backend/Dockerfile
       target: development
-    container_name: caritas_backend_dev
+    container_name: booking_backend_dev
     restart: unless-stopped
     env_file:
       - ./apps/backend/.env
@@ -48,12 +48,14 @@ services:
       - "3000:${PORT:-3000}"
     volumes:
       - ./apps/backend/src:/app/apps/backend/src:ro
+      - ./tests:/app/tests:ro
+      - ./database/scripts:/app/database/scripts:ro
     depends_on:
       sqlserver:
         condition: service_healthy
     networks:
-      - caritas_dev_network
+      - booking_dev_network
 
 networks:
-  caritas_dev_network:
+  booking_dev_network:
     driver: bridge

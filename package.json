@@ -2,7 +2,7 @@
   "name": "ch-concurrent-appointment-booking-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo for Caritas Hospital Concurrent Appointment Booking API",
+  "description": "Monorepo for Concurrent Appointment Booking API",
   "workspaces": [
     "apps/*"
   ],
@@ -10,12 +10,12 @@
     "dev": "npm run dev --workspace=backend",
     "build": "npm run build --workspace=backend",
     "start": "npm start --workspace=backend",
-    "dev:backend": "npm run dev --workspace=backend",
-    "start:backend": "npm start --workspace=backend",
+    "test": "npm test --workspace=backend",
+    "test:concurrency": "tsx tests/concurrency.test.ts",
+    "docker:test:concurrency": "npm run compose:dev -- exec backend npx tsx tests/concurrency.test.ts",
     "db:init": "npm run db:init --workspace=backend",
     "docker:dev": "npm run compose:dev -- up --build",
     "docker:prod": "npm run compose:prod -- up --build -d",
-    "docker:backend": "npm run compose:dev -- up --build -d backend",
     "compose:dev": "docker compose --env-file database/.env --env-file apps/backend/.env -f docker-compose.yml",
     "compose:prod": "docker compose --env-file database/.env --env-file apps/backend/.env -f docker-compose.prod.yml"
   },

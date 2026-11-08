@@ -21,8 +21,10 @@ FROM base AS development
 
 WORKDIR /app
 
-# Copy backend source code for initial container state
+# Copy backend source code and tests for initial container state
 COPY apps/backend/src ./apps/backend/src
+COPY tests ./tests
+COPY database/scripts ./database/scripts
 
 ENV NODE_ENV=development
 
@@ -59,6 +61,7 @@ RUN npm ci --omit=dev
 
 # Copy compiled JavaScript output from builder stage
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY database/scripts ./database/scripts
 
 # Secure non-root user
 USER node
